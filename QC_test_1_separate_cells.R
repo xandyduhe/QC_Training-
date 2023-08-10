@@ -172,10 +172,10 @@ for (i in 1:length(objlist)) {
                                     features = 'Gfap') +
       scale_y_continuous(trans = 'log10')
 
-    # png(paste0('./test_QC1_plots/',
-    #            name.id), '_DimFeatVln_plots_by_cluster.png')
+    png(paste0('./test_QC1_plots/',
+              name.id), '_DimFeatVln_plots_by_cluster.png')
     print(plot.feature + plot.dim + plot.violin)
-    # dev.off()
+    dev.off()
 }
 
 # setwd('../../..')
@@ -248,7 +248,6 @@ write.table(rat.cell.counts,
             file = 'ALEXI_TEST1_rat_count_by_lib.csv',
             sep = ',',
             quote = FALSE)
-
 
 save(trans.obj,
      file = 'transformed_data_hybrid_genome.RData')
