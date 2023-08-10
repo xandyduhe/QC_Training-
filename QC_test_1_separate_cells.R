@@ -140,7 +140,7 @@ for (i in 1:length(objlist)) {
   scale.obj[[i]] <- objlist[[i]]
 }
 
-# Check and remove rat cells ----
+# Check and remove rat cells manually by looking at plots----
 clean.objlist <- vector(mode = 'list', length = length(objlist))
 
 ffeatures <- c('Gfap', 'S100b', 'GAD1', 'SLC17A6')
@@ -172,35 +172,34 @@ for (i in 1:length(objlist)) {
                                     features = 'Gfap') +
       scale_y_continuous(trans = 'log10')
 
-    png(paste0('./test_QC1_plots/',
-               name.id), '_DimFeatVln_plots_by_cluster.png')
+    # png(paste0('./test_QC1_plots/',
+    #            name.id), '_DimFeatVln_plots_by_cluster.png')
     print(plot.feature + plot.dim + plot.violin)
-    dev.off()
-
+    # dev.off()
 }
 
 # setwd('../../..')
 setwd('/data/Alexi_Duhe/test1')
 
-remove.rat.clusters <- list(c(4),  #objlist[[1]]  9-0
-                            c(5),  #objlist[[2]]  9-1
-                            c(5),  #objlist[[3]]  9-6
+remove.rat.clusters <- list(c(10,8,13),  #objlist[[1]]  9-0
+                            c(6,12),     #objlist[[2]]  9-1
+                            c(6),        #objlist[[3]]  9-6
 
-                            c(5),  #objlist[[4]]  13-0
-                            c(7),  #objlist[[5]]  13-1
-                            c(6),  #objlist[[6]]  13-6
+                            c(9),   #objlist[[4]]  13-0
+                            c(10),  #objlist[[5]]  13-1
+                            c(11),  #objlist[[6]]  13-6
 
-                            c(5,6),#objlist[[7]]  21-0
-                            c(),   #objlist[[8]]  21-1
-                            c(),   #objlist[[9]]  21-6
+                            c(7),   #objlist[[7]]  21-0
+                            c(9),   #objlist[[8]]  21-1
+                            c(9),   #objlist[[9]]  21-6
 
-                            c(8),  #objlist[[10]] 23-0
-                            c(4),  #objlist[[11]] 23-1
-                            c(),   #objlist[[12]] 23-6
+                            c(10),  #objlist[[10]] 23-0
+                            c(10),  #objlist[[11]] 23-1
+                            c(9),   #objlist[[12]] 23-6
 
-                            c(4,6),#objlist[[13]] 53-0
-                            c(5),  #objlist[[14]] 53-1
-                            c(3))  #objlist[[15]] 56-1
+                            c(7,14,2),  #objlist[[13]] 53-0
+                            c(5,8,14),  #objlist[[14]] 53-1
+                            c(9,7))     #objlist[[15]] 53-6
 
 for (i in 1:length(objlist)) {
 
@@ -336,5 +335,4 @@ save(clean.objlist,
 # dimensionality reduction, cell type annotation, and visualization.
 # The code focuses on removing rat cells and summarizing their proportions in
 # each dataset.
-
 
