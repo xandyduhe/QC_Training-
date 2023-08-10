@@ -1,0 +1,349 @@
+# /nvmefs/scARC_Duan_018/Duan_project_025_RNA/Analysis_part2_GRCh38/20230509_025_17_46_plot_QC_stats.R
+# Load the required libraries for data processing and analysis
+
+# Load necessary libraries
+library(Seurat)
+library(RColorBrewer)
+library(viridis)
+library(ggplot2)
+library(stringr)
+library(readr)
+
+# Read cell counts data from csv file
+cell.counts <- read_csv('cell_counts_from_GRCh38_mapped_data.csv')
+
+# List of h5 files containing cell data
+h5.list <- list.files('/data/FASTQ/Duan_Project_025_hybrid',
+                      'filtered_feature_bc_matrix.h5',
+                      recursive = TRUE,
+                      include.dirs = FALSE,
+                      full.names = TRUE)
+
+# extract name identifier from path list created in h5.list at ith h5 file
+name.id <- (str_extract(h5.list,
+                        pattern = '[0-9]+-[0-6]')) #group+time
+time.ids <- sub('.*-', '', name.id) # time
+group.ids <- sub('-.*', '', name.id) # group
+
+# # create names vector to store names variables in vector
+# h5names <- c(h5names, as.vector(name.id))
+
+# Select the first 6 h5 files for analysis**********************
+
+# 1. Calculate proportions of rat, unmapped, and mapped human cells ----
+
+# Create empty dataframe to store results
+df.cell.counts <- data.frame(
+  library = rep(name.id,
+                each = 3),
+  count = rep_len(0, 3 * length(cell.counts$library)),
+  type_of_count = rep(c('rat',
+                        'human unmapped to demuxed barcodes',
+                        'human cells'),
+                      times = length(cell.counts$library)))
+
+# Set factor levels for 'type.of.count' column
+df.cell.counts$library <- factor(df.cell.counts$library,
+                                 levels = (unique(df.cell.counts$library)))
+
+# Loop through each index in the range of cell counts libraries
+for (i in 1:length(cell.counts$library)) {
+  # Update the count for human cells at the appropriate index in df.cell.counts
+  df.cell.counts$count[i * 3] <-
+    cell.counts$human[cell.counts$library == df.cell.counts$library[i * 3]]
+
+  # Update the count for nonhuman cells in df.cell.counts
+  df.cell.counts$count[i*3 - 1] <-
+    cell.counts$nonhuman[cell.counts$library == df.cell.counts$library[i * 3]]
+
+  # Update the count for rat cells in df.cell.counts
+  df.cell.counts$count[i*3 - 2] <-
+    cell.counts$rat[cell.counts$library == df.cell.counts$library[i * 3]]
+}
+
+# Grouped barplot to show counts of different cell types/library
+ggplot(data = df.cell.counts,
+       aes(x = library,
+           y = count,
+           fill = type.of.count)) +
+  geom_col(position = 'stack') +
+  scale_fill_manual(values = rev(brewer.pal(3, 'set 3'))) + #color palette
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5, size = 11)) +
+  xlab('Library') +
+  ylab('Cell Counts') +
+  labs(fill = 'Cell Types') +
+  ggtitle('Number of rate cells,
+          \nnon-rat cells not mapped to huan barcodes,
+          \nand cells mapped to human barcodes per library')
+
+# Stacked barplot to show percentages of different cell types/library
+ggplot(data = df.cell.counts,
+       aes(x = library,
+           y= count,
+           fill = type.of.count)) +
+  # Stacked bar plot with percentages
+  geom_col(position = 'fill') +
+  scale_fill_manual(values = rev(brewer.pal(3, 'Set3'))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5)) +
+  xlab('Library') +
+  ylab('Percentage of cells') +
+  labs(fill = 'Cell Types') +
+  ggtitle("Percentage of rat cells,
+          \nnon-ratcells not mapped to human barcodes,
+          \nand cells mapped to human barcodes per library")
+
+# Function to create a plot for summarizing cell counts per library
+plotCellCountRectangles <- function(df) {
+  p <- ggplot(df,
+              aes(x = library,
+                  y = rep_length(2, length(libnames)),
+                  fill = cell.counts)) +
+    geom_col(width = 1,
+             position = position_dodge(width = 0.5)) +
+    geom_text(aes(label = cell.counts),
+              nudge_y = -1,
+              hjust = 'middle') +
+    scale_fill_continuous(low = '#a2c1f2',
+                          high = '#5c96f2') +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5,
+                                    size = 11)
+          axis.title = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks = element_blank()) +
+    ggtitle('# of Nuclei') +
+    coord_flip() +
+    NoLegend()
+  print(p)
+
+}
+
+# Function to create a barplot showing UMIs per nuclei/cell
+plotUMIbars <- function(df) {
+  p <- ggplot(df,
+              aes(x = library,
+                  y = reads.per.cell)) + # data mapping
+    ylab('# UMIs per nuclei') + #label for y-axis
+    geom_col(position = 'dodge', color = 'gray27', fill = 'gray90') + # grouped barplot
+    theme_minimal() +
+    theme(axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = elements_text(size = 11),
+          axis.text.x = element_text(size = 8)) +
+    coord_flip()
+  print(p)
+}
+
+# Function to create a barplot showing total UMIs per library
+plotTotalUMIbars <- function(df) {
+  p <- ggplot(df,
+              aes(x = library,
+                  y = n.reads)) +
+    ylab('Total # UMIs') +
+    geom_col(position = 'dodge',
+             color = 'gray27',
+             fill = 'gray90') +
+    theme_minimal() +
+    theme(axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_text(size = 11),
+          axis.text.x = element_text(size = 8)) +
+    coord_flip()
+  print(p)
+}
+
+# Function to Processs data: create tables with raw, demuxed and human data
+process_data <- function(df, list, save.path) {
+
+  for (i in 1:length(name.id)) {
+    print(name.id[i])
+
+    df$cell.counts[i] <- length(list[[i]]@assays$RNA@counts@Dimnames[[2]])
+    df$n.reads[i] <- sum(list[[i]]@assays$RNA@counts@x)
+    df$reads.per.cell[i] <- df$n.reads[i] / df$cell.counts[i]
+  }
+  write.table(df,
+              file = save.path,
+              quote = FALSE,
+              sep = ',',
+              row.names = FALSE,
+              col.names = TRUE)
+  df$library <- factor(df$library,
+                       levels = rev(name.id))
+  plotCellCountRectangles(df)
+  plotUMIbars(df)
+  plotTotalUMIbars(df)
+}
+
+#Create empty data frames to store stats for each library
+df.raw <-
+  data.frame(library = name.id, # lib names
+             cell.counts = rep_len(0, length(name.id)), #cell count
+             n.reads = rep_len(0,length(name.id)), # total UMI
+             reads.per.cell = rep_len(0, length(name.id))) #average UMI
+
+df.qc <-
+  data.frame(library = name.id,
+             cell.counts = rep_len(0, length(name.id)),
+             n.reads = rep_len(0, length(name.id)),
+             reads.per.cell = rep_len(0, length(name.id)))
+
+df.human <-
+  data.frame(library = name.id,
+             cell.counts = rep_len(0, length(name.id)),
+             n.reads = rep_len(0, length(name.id)),
+             reads.per.cell = rep_len(0, length(name.id)))
+
+df.demux <-
+  data.frame(library = name.id,
+             cell.counts = rep_len(0, length(name.id)),
+             n.reads = rep_len(0, length(name.id)),
+             reads.per.cell = rep_len(0, length(name.id)))
+
+# # load raw data
+# load('GRCH38_mapped_raw_list') # created in QC_test_2...
+#
+# for (i in 1:length(name.id)) {
+#   print(name.id[i])
+#   df.raw$cell.counts[i] <- length(objlist[[i]]@assays$RNA@counts@Dimnames[[2]])
+#   df.raw$n.reads[i] <- sum(objlist[[i]]@assays$RNA@counts@x)
+#   df.raw$reads.per.cell[i] <- sum(objlist[[i]]@assays$RNA@counts@x)/df.raw$cell.counts[i]
+# }
+
+load('GRCH38_mapped_raw_list')
+load('GRCh38_mapped_removed_rat_assigned_demux.RData')
+obj <- subset(no.rat.list[[i]], cell.line.ident != 'unmatched')
+
+#raw
+process_data(df.raw, objlist, './raw_cell_counts_UMI_per_lib.csv')
+# removed rat only
+process_data(df.human, no.rat.list, './no_rat_cell_counts_UMI_per_lib.csv')
+#mapped to demuxed
+process_data(df.demux, obj, './mapped_to_demuxlet_UMI_counts_per_lib.csv')
+
+# 3. Number of cells and counts per line ----
+load('integrated_object.RData')
+
+# Get unique cell lines present in the integrated object
+lines <- sort(unique(integrated$cell.line.ident))
+
+# Data frame to store cell counts, total UMI, UMI per cell for each line
+df.cell.counts.reads <- data.frame(line = lines,
+                                   cell.counts = rep_len(0, length(lines)),
+                                   n.reads = rep_len(0, length(lines)),
+                                   reads.per.cell = rep_length(0, length(lines)))
+
+# Calculate and store cell counts, total UMI, and UMI per cell for each library
+for (i in 1:length(lines)) {
+  print(lines[i])
+
+  # subset the integrated object for the current cell line
+  temp.obj <- subset(integrated, cell.line.ident == lines[i])
+
+  # calculate and store cell counts
+  df.cell.counts.reads$cell.counts[i] <- length(temp.obj@assays$RNA@counts@Dimnames[[2]])
+
+  # calculate and store total UMIs
+  df.cell.counts.reads$n.reads[i] <- sum(temp.obj@assays$RNA@counts@x)
+
+  # calculate and store UMIs per cell
+  df.cell.counts.reads$reads.per.cell[i] <-
+    sum(temp.obj$assays$RNA@counts@x)/df.cell.counts.reads$cell.counts[i]
+}
+
+# write the cell counts and UMI counts per line data frame to a csv file
+write.table(df.cell.counts.reads,
+            file = 'cell_counts_UMI_per_line.csv',
+            quote = FALSE,
+            sep = ',',
+            row.names = FALSE,
+            col.names = TRUE)
+
+# set the order of cell lines for plotting
+df.cell.counts.reads$line <- factor(df.cell.counts.reads$line,
+                                    levels = rev(lines))
+
+# plot cell count
+#   each bar represents a cell line, and the height of the bar indicates the
+#   number of nuclei (# Nuclei) for that cell line. Labels displaying the exact
+#   cell count values are added above each bar. The colors of the bars are
+#   determined by the cell count values
+ggplot(df.cell.counts.reads,
+       aes(x = line,
+           y= rep_len(2, length(lines)),
+           fill = cell.counts)) +
+  geom_col(width = 1
+           position = position_dodge(width = 0.5)) +
+  geom_text(aes(label = cell.counts),
+            nudge_y = -1,
+            hjust = 'middle') +
+  scale_fill_continous(low = '#bee8c2', high = '#7bb881') +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5,
+                                  size = 11),
+        axis.title = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  ggtitle('# of Nuclei') +
+  coord_flip() +
+  NoLegend()
+
+# plot UMI per cell(nuclei)
+ggplot(df.cell.counts.reads,
+       aes(x = line,
+           y = reads.per.cell)) +
+  ylab('# of UMIs per nuclei')
+geome_col(position = 'dodge')
+
+
+
+
+
+
+
+#---- Process Notes -----
+#
+# Analasis and visualizing single-cell RNA sequencing (scRNA-seq) data from the
+# "Duan_Project_025_17&46" study. The code is divided into multiple sections,
+# each performing different analyses and generating plots. Summary of
+# what each section does:
+#
+# 1. **Proportions of Cell Types and Mapping Status:**
+#    This section reads cell count data and creates stacked bar plots to
+#    display the proportions of different cell types and mapping statuses
+#    (rat cells, human cells, human unmapped) for different libraries.
+#
+# 2. **Summary of Cell Counts and UMI Counts:**
+#    This section calculates and visualizes the number of cells and UMIs
+#    (unique molecular identifiers) per library. It generates plots showing
+#    the distribution of cell counts, UMIs per cell, and total UMIs across
+#    different libraries.
+#
+# 3. **Cell Counts and UMI Counts per Cell Line:**
+#    Here, the code calculates and visualizes cell counts and UMIs per
+#    cell line. It generates plots illustrating the cell counts and UMIs for
+#    each cell line.
+#
+# 4. **Cellular Composition Analysis:**
+#    This section analyzes and visualizes the cellular composition of
+#    different cell lines at different time points. It creates stacked bar
+#    plots showing the composition of different cell types
+#    (e.g., GABA, glutamatergic) within each cell line and time point.
+#
+# 5. **Gene Expression Analysis by Line and Time:**
+#    This part generates dot plots to visualize gene expression of
+#    specific genes (e.g., EGR1, NR4A1) in different cell lines and time points.
+#
+# 6. **Cellular Composition Analysis with Filtering:**
+#    This section refines the cellular composition analysis, focusing on
+#    specific cell types (GABA and glutamatergic) after filtering.
+#    It generates updated stacked bar plots showing the cellular composition
+#    of different cell lines at different time points.
+#
+# Each section of the code performs specific analyses and generates
+# visualizations related to the scRNA-seq data, helping to understand
+# the cellular composition, gene expression patterns, and other
+# characteristics of the analyzed cells.
+
