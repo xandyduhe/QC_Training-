@@ -13,7 +13,7 @@ library(cowplot)
 
 
 
-plan("multisession", workers = 2)
+plan("multisession", workers = 8)
 options(expressions = 20000)
 options(future.globals.maxSize = 207374182400)
 
@@ -320,6 +320,8 @@ save(trans.list,
      file = 'transformed_prepared_for_integration.RData')
 save(integrated.labeled,
      file = "integrated_labeled.RData")
+save(integrated.data,
+     file = 'integrated_clustered_obj.RData')
 
 
 
