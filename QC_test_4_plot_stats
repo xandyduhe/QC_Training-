@@ -295,7 +295,306 @@ ggplot(df.cell.counts.reads,
        aes(x = line,
            y = reads.per.cell)) +
   ylab('# of UMIs per nuclei')
-geome_col(position = 'dodge')
+geome_col(position = 'dodge',
+          color = 'gray27',
+          fill = 'gray90') +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_text(size = 11)) +
+  coord_flip()
+
+
+# plot total UMI for each cell line
+ggplot(df.cell.counts.reads,
+       aes(x = line,
+           y = n.reads)) +
+  ylab('# of total UMIs') +
+  geom_col(position = 'dodge',
+           color = 'gray27',
+           fill = 'gray90') +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_text(size = 11),
+        axis.text.x = element_text(size = 8)) +
+  coord_flip()
+
+
+# 4. Cellular composition ----
+load(integrated_labeled.RData)
+
+# empty list to store summarized data
+time.type.sum <- vector(mode = 'list', length = 3L)
+
+# get number of lines
+numlines <- length(lines)
+
+# get cell types
+types <- as.vector(unique(integrated.labeled$fine.cell.type))
+
+# get the number of cell types
+numtypes <- length(types)
+
+# get unique time points
+times <- unique(integrated.labeled$time.ident)
+
+# Loop through each time point
+for (k in 1:length(times)) {
+
+  # create a data frame to store summarized data for each cell type and line
+  df <- data.frame(cell.type = rep_len(NA,  numlines*numtypes),
+                   cell.line = rep_len(NA, numlines*numtypes),
+                   counts = rep_len(0, numlines*numtypes))
+
+  # loop through each cell line
+  for (i in 1:length(lines)) {
+    subobj <- subset(integrated.labeled,
+                     subset = cell.line.ident == lines[i] & time.ident == times[k])
+
+    #loop through each cell type
+    for (j in 1:numtypes) {
+      print(numtypes * i - numtypes +j)
+      df$cell.type[numtypes * i - numtypes +j] <- types[j]
+      df$cell.line[numtypes * i - numtypes +j] <- lines[i]
+      df$counts[numtypes * i -numtypes +j] <- sum(subobj$fine.cell.type == types[j])
+    }
+  }
+
+  # define the order of cell types for plotting
+  df$cell.type <- factor(df$cell.type,
+                         levels = c('GABA', "SEMA3E+ GABA", "SST+ GABA",
+                                    "NEFM+ glut", "NEFM- glut", "unknown neuron",
+                                    "immature neuron", "unknown"))
+
+  # store the summarized data in the list
+  time.type.sum[[k]] <- df
+}
+
+# Loop through each time point
+for (i in 1:3) {
+  df.to.plot <- time.type.sum[[i]]
+
+  # set up the png file for sving the plot
+  png(filename = paset0('./test_QC4_plots/full_cellular_compos_', times[i], '.png'),
+      width = 500,
+      height = 750)
+
+  # Create the plot
+  p <- ggplot(data = df.to.plot,
+              aes(x = cell.line,
+                  y = counts,
+                  fill = cell.type)) +
+    geom_col(position = 'fill') +
+    scale_fill_manual(values = c("#B33E52", #GABA
+                                 "#E6B8BF", #SST GABA
+                                 "#CC7A88", #SEMA3E GABA
+                                 "#E6D2B8", #nmglut
+                                 "#CCAA7A", #npglut
+                                 "#0075DC", #immature neuron
+                                 "#4C005C", #unknown neuron
+                                 "#993F00" )) + #unknown
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(hjust = 0.5)) +
+    xlab('Cell Line') +
+    ylab('Cellular compositon (%)') +
+    labs( fill = 'Cell Types') +
+    ggtitle(times[i])
+  print(p) # print plot
+  dev.off() # close the PNG device
+}
+
+# 5. Generalize cell types ----
+# Initialize an empty list to store results for each time point
+time.type.sum <- vector(mode = 'list',
+                        length = 3L)
+
+# Calculate the number of cell lines and types
+numlines <- length(lines)
+types <- as.vector(unique(integrated_labeled$cell.type))
+numtypes <- length(types)
+
+# get unique time points
+times <- unique(integrated.labeled$time.ident)
+
+# Loop through each time point
+for (k in 1:length(times)){
+  print(times[k])
+
+  # data frame to store the result for the current time point
+  df <- data.frame(cell.type = rep_len(NA, numlines*numtypes),
+                   cell.line = rep_len(NA, numlines*numtypes),
+                   counts = rep_len(0, numlines*numtypes))
+
+  # Loop through each cell line
+  for (i in 1:length(lines)){
+    # subset the integrated labeled data for the current cell line and time point
+    subobj <- subset(integrated.labeled,
+                     subset = cell.line.ident == lines[i] & time.ident == times[k])
+
+    # Loop thought each cell type
+    for (j in 1:numtypes){
+      print(types[j])
+      print(numtypes * i - numtypes + j)
+
+      # Assign values to the data frame based on cell type, cell line, and counts
+      df$cell.types[numtypes * i - numtypes + j] <- types[j]
+      df$cell.line[numtypes * i - numtypes + j] <- lines[i]
+      df$counts[numtypes * i numtypes + j] <- sum(subobj$cell.type == types[j])
+    }
+  }
+
+  # set the order of cell types for plotting
+  df$cell.type <- factor(df$cell.type,
+                         levels = c("GABA", "nmglut", "npglut", "unidentified"))
+
+  # store the result for the current time point in the list
+  time.type.sum[[k]] <- df
+}
+
+# loop through each time point
+for (i in 1:3) {
+  # extract the data frame for the current time point
+  df.to.plot <- time.type.sum[i]
+
+  # specify the filename for saving the plot
+  png(filename = paste0('./test_QC4_plots/general_cellular_compos_', times[i], '.png'),
+      width = 500,
+      height = 750)
+
+  # create a bar plot using ggplot
+  p <- ggplot(data = df.to.plot,
+              aes(x = cell.line,
+                  y = counts,
+                  fill = cell.type)) +
+    geom_col(position = 'fill')+
+
+    # customize the color palette for cell types
+    scale_fill_manual(values = c("#B33E52", # GABA
+                                 "#E6D2B8", # nmglut
+                                 "#CCAA7A", # npglut
+                                 "#4293db"  # unknown
+                                 )) +
+
+    # customize plot appearence
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(hjust = 0.5)) +
+    xlab('Cell Line') +
+    ylab('Cellular composition (%)') +
+    labs(fill - 'Cell Types') +
+    ggtitle(times[i])
+
+  print(p)
+  dev.off()
+}
+
+# 5. Response gene expression by line ----
+# initialize new varibale
+integrated.labeled$linextime.ident <- ''
+
+# loop through each cell line and time point combination
+for (l in lines) {
+  for (t in times) {
+    # identify cells with matching cell line and time point
+    matched.cells <-
+      integrated.labeled$cell.line.ident == l & integrated.labeled$time.ident == t
+
+    # combine cell line and time point information and assign tothe new variable
+    integrated.labeled$linextime.ident[matched.cells] <- paste(l, t, sep = ' ')
+  }
+}
+ # Display unique combinations of cell line and time point
+unique(integrated.labeled$linextime.ident)
+
+# Dotplot showing gene expression patterns for specific features
+# grouped by the combined cell line and time point (linextime.ident)
+DotPlot(integrated.labeled,
+        assay = 'SCT',
+        cols = c('white',
+                 'red3'),
+        features = c("EGR1", "NR4A1", "NPAS4", "FOS"),
+        group.by = 'linextime.ident') +
+  coord_flip() +
+  theme(text = element_text(size = 10),
+        axis.text.x = element_text(size = 8,
+                                   angle = 45,
+                                   hjust = 1,
+                                   vjust = 1),
+        axis.text.y = element_text(size = 10))
+
+# Create another DotPlot with different features, simularly grouped by linextime.ident
+DotPlot(integrated.labeled,
+        assay = 'SCT',
+        cols = c('white',
+                 'red3'),
+        features = c("IGF1", "VGF", "BDNF"),
+        group.by = 'linextime.ident') +
+  coord_flip() +
+  theme(text = element_text(size = 10),
+        axis.text.x = element_text(size = 8,
+                                   angle = 45,
+                                   hjust = 1,
+                                   vjust = 1),
+        axis.text.y = element_text(size = 10))
+
+# 6. Cellular composition with only GABA and glut ----
+# create empty list to store data frames for cellular composition analysis
+time.type.sum <- vector(mode = 'list', length = 3L)
+
+# number of unique cell lines
+numlines <- length(lines)
+
+# subset the integrated.labeled dataframe to exclude 'unidentified' cell lines
+integrated.labeled <- subset(integrated.labeled,
+                            cell.type != 'unidentified')
+
+# unique fine cell types
+types <- as.vector(unique(integrated.labeled$fine.cell.type))
+
+# calculate the total number of unique fine cell types
+numtypes <- length(types)
+
+# unique time points
+times <- unique(integrated.labeled$time.ident)
+
+# iterating thought each unique time point to analyze the cellular composition
+#for different fine cell types and cell lines
+
+# loop through each uniqie time point
+for (k in 1:length(times)) {
+  print(time[k])
+
+  #create and empty dataframe to store the results for this time point
+  df <- data.frame(cell.type = rep_len(NA, numlines * numtypes),
+                   cell.line = rep_len(NA, numlines * numtypes),
+                   counts = rep_len(0, numlines * numtypes))
+
+  # loop through each unique fine cell type
+  for (j in 1:length(lines)) {
+    # subset the integrated.labeled dataframe for the current cell line and time point
+    subobject <- subset(integrated.labeled,
+                        subset = cell.line.ident == lines[i] & time.ident == times[k])
+
+    # loop through each unique fine cell type
+    for (j in 1:numtypes) {
+      print(numtypes * i - numtypes + j)
+
+      # fill the datafrme with the fine cell type, cell line, and count
+      df$cell.type[numtypes * i - numtypes + j] <- types[j]
+      df$cell.line[numtypes * i - numtypes + j] <- lines[i]
+      df$counts[numtypes *i - numtypes +j] <- sum(subobj$fine.cell.type == types[j])
+    }
+  }
+
+  # set the order of cell types for visualizetion
+  df$cell.type <- factor(df$cell.type,
+                         levels = c("GABA", "SEMA3E+ GABA",
+                                    "NEFM+ glut", "NEFM- glut"))
+
+  # store the resulting dataframe in the time_type_sum list
+  time.type.sum[[k]] <- df
+
+}
 
 
 
