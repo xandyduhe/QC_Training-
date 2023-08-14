@@ -11,6 +11,7 @@ library(future)
 library(glmGamPoi)
 library(cowplot)
 
+setwd("/data/Alexi_Duhe/test1/")
 
 
 plan("multisession", workers = 8)
@@ -34,30 +35,25 @@ for (i in 1:length(QCed.list)) {
   print(paste0('Working on ', i, ' of ', length(QCed.list)))
 
   # Calculate the percentage of mt gene expression for each cell
-  obj <- PercentageFeatureSet(QCed.list[[i]],
-                              pattern = c('^MT-'),
-                              col.name = 'percent.mt')
+  QCed.list[[i]] <- PercentageFeatureSet(QCed.list[[i]],
+                                         pattern = c('^MT-'),
+                                         col.name = 'percent.mt')
 
   # Identify variable features using a gamma-Poisson distribution
-  obj <- FindVariableFeatures(obj,
-                              nfeatures = 8000,
-                              vars.to.regress = 'percent.mt',
-                              method = 'glmGamPoi',
-                              return.only.var.genes = F,
-                              variable.features.n = 8000,
-                              verbose = T)
+  QCed.list[[i]] <- FindVariableFeatures(QCed.list[[i]], nfeatures = 8000,)
 
-  # Apply SCTransform to normalize and transform gene expression data
-  trans.list[[i]] <- SCTransform(obj,
-                                 vars.to.regress = 'percent.mt',
-                                 method = 'glmGamPoi',
-                                 return.only.var.genes = F,
-                                 variable.features.n = 8000,
-                                 verbose = T,
-                                 seed.use = 2023)
+  # Apply SCTransform to normalize, scale, find variable features
+  QCed.list[[i]] <- SCTransform(QCed.list[[i]],
+                                vars.to.regress = 'percent.mt',
+                                method = 'glmGamPoi',
+                                return.only.var.genes = F,
+                                variable.features.n = 8000,
+                                verbose = T,
+                                seed.use = 2023)
+
+  trans.list[[i]] <- QCed.list[[i]]
 }
 
-# PCA for data integration ----
 
 # Select a common set of features across all samples for integration
 ffeatures <- SelectIntegrationFeatures(object.list = trans.list,
@@ -68,18 +64,15 @@ ffeatures <- SelectIntegrationFeatures(object.list = trans.list,
 trans.list <- PrepSCTIntegration(trans.list,
                                  anchor.features = ffeatures)
 
-# Define a function to scale and perform PCA on the input data
-scale.pca <-
-  function(x) {
-  x <- ScaleData(x,
-                 features = ffeatures)
-  x <- RunPCA(x,
-              features = ffeatures)
-}
-
 # Apply the scale.pca function to each sample in the transformed list
 trans.list <- lapply(X = trans.list,
-                    FUN = scale.pca)
+                     FUN = function(x) {
+                       x <- ScaleData(x,
+                                      features = ffeatures)
+                       x <- RunPCA(x,
+                                   features = ffeatures)
+                     })
+
 
 # Find integration anchors across samples for joint analysis
 anchors <- FindIntegrationAnchors(object.list = trans.list,
@@ -93,10 +86,33 @@ anchors <- FindIntegrationAnchors(object.list = trans.list,
 # Integrate data from different samples using the integration anchors
 integrated.data <- IntegrateData(anchorset = anchors,
                                  verbose = TRUE)
-
-# Save integrated.data before transformations
 save(integrated.data, file = 'integrated_object.RData')
 
+# # Scale data for downstream analysis
+# integrated.data <-  ScaleData(integrated.data)
+#
+# # Run PCA on scaled data
+# integrated.data <- RunPCA(integrated.data, verbose = TRUE,
+#                           seed.use = 2023)
+#
+# # Run UMAP on PCA results
+# integrated.data <- RunUMAP(integrated.data, reduction = 'pca',
+#                            dims = 1:30,
+#                            seed.use = 2023)
+#
+# # Find nearest neighbors based on UMAP coordinates
+# integrated.data <- FindNeighbors(integrated.data, reduction = 'pca',
+#                                  dims = 1:30)
+#
+# # Perform clustering using Louvain algorithm
+# integrated.data <- FindClusters(integrated.data, resolution = 0.5,
+#                                 random.seed = 2023)
+
+# PCA for data integration ----
+
+
+# Save integrated.data before transformati
+# load(integrated_object.RData)
 # Perform Quality control on the integrated data ----
 
 # Calculate the percentage of mt gene expression in each cell
@@ -123,9 +139,9 @@ VlnPlot(integrated.data,
 unique(integrated.data$orig.ident)
 unique(integrated.data$time.ident)
 
-# Set the default assay to 'integratd' for downstream analysis
+# Set the default assay to 'integrated' for downstream analysis
 DefaultAssay(integrated.data) <- 'integrated'
-
+#
 # Scale data for downstream analysis
 integrated.data <-  ScaleData(integrated.data)
 
@@ -148,29 +164,33 @@ integrated.data <- FindClusters(integrated.data, resolution = 0.5,
 
 # Define a color pallet for library-based grouping
 library.colors <- DiscretePalette(n = length(unique(Idents(integrated.data))),
-                                             'alphabet')
+                                  'alphabet')
 # Visualize clustering results using a dimentionality reduction plot
-DimPlot(integrated.data,
-        label = TRUE,
-        group.by = 'seurat_clusters',
-        reduction = 'pca') +
+p1 <- DimPlot(integrated.data,
+              cols = library.colors,
+              label = T,
+              group.by = 'integrated_snn_res.0.5',
+              raster = F) +
   NoLegend() +
   ggtitle('Clustering RNAseq data') +
-  theme(text = element_text(size = 10), axis.text = element_text(size = 10))
+  theme(text = element_text(size = 10),
+        axis.text = element_text(size = 10))
+print(p1)
 
 # Create DimPlot based on orig identifiers
 DimPlot(integrated.data,
         label = FALSE,
         cols = library.colors,
         group.by = 'orig.ident',
-        reduction = 'pca') +
+        raster = F) +
   ggtitle('by library') +
   theme(text = element_text(size = 10),
         axis.text = element_text(size = 10))
 
 DimPlot(integrated.data,
         label = FALSE,
-        group.by = 'time.ident') +
+        group.by = 'time.ident',
+        raster = F) +
   ggtitle('By time point') +
   theme(text = element_text(size = 10),
         axis.text = element_text(size = 10))
@@ -181,16 +201,24 @@ DimPlot(integrated.data,
 DefaultAssay(integrated.data) <- 'SCT'
 
 # Feature plot for specific marker genes
-FeaturePlot(integrated.data, features = c('SOX2',
-                           "VIM"))
-FeaturePlot(integrated.data, features = c('GAD1',
-                           'GAD2',
-                           "SLCC17A6"),
-              ncol = 2)
-FeaturePlot(integrated.data, features = c('POU5F1',
-                           'NANOG'))
-FeaturePlot(integrated.data, features = c('NEFM',
-                           'MAP2'))
+FeaturePlot(integrated.data,
+            features = c('SOX2',
+                         "VIM"),
+            raster = F)
+FeaturePlot(integrated.data,
+            features = c('GAD1',
+                         'GAD2',
+                         "SLCC17A6"),
+            raster = F,
+            ncol = 2)
+FeaturePlot(integrated.data,
+            features = c('POU5F1',
+                         'NANOG'),
+            raster = F)
+FeaturePlot(integrated.data,
+            features = c('NEFM',
+                         'MAP2'),
+            raster = F)
 
 # Define new cluster itentifiers
 # List of gene markers
@@ -229,21 +257,22 @@ new.cluster.ids <-
   c("NEFM- glut", "NEFM+ glut", "NEFM- glut", "NEFM+ glut", "GABA",
     "GABA", "NEFM- glut", "SST+ GABA", "NEFM- glut", "NEFM- glut",
     "SEMA3E+ GABA", "NEFM- glut", "NEFM- glut", "GABA", "GABA",
-    "unknown neuron", "immature neuron", "unknown")
+    "unknown neuron", "immature neuron", "unknown", 'unknown', 'unknown')
 
 # length(new.cluster.ids)
-# length(unique(integrated.data$seurat_clusters))
+#length(unique(integrated.data$seurat_clusters))
 
 # Rename cluster levels with new cluster identifiers
 names(new.cluster.ids) <- levels(integrated.data)
 integrated.labeled <- RenameIdents(integrated.data,
-                                  new.cluster.ids)
+                                   new.cluster.ids)
 
 # Create DimPlot to visualize labeled clusters using UMAP
 DimPlot(integrated.labeled,
         reduction = 'umap',
         label = TRUE,
         repel = FALSE,
+        raster = F,
         pt.size = 0.3,
         cols = c("#E6D2B8", #nmglut
                  "#CCAA7A", #npglut
@@ -306,7 +335,7 @@ for (i in 1:length(types)) {
 
 # Create a DimPlot to visualize clusters labeled by cell type counts
 DimPlot(integrated.labeled, reduction = "umap", group.by = "cell.type.counts",
-        label = TRUE, repel = F, pt.size = 0.3,
+        label = TRUE, repel = F, pt.size = 0.3, raster = F,
         cols = c("#B33E52",
                  "#E6D2B8",
                  "#CCAA7A",
