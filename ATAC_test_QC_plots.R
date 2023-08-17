@@ -1,7 +1,7 @@
 # Chuxuan Li 11/07/2022
 # demultiplex, remove nonhuman, QC
 
-# init ####
+# init #### XXXX
 library(Seurat)
 library(Signac)
 library(RColorBrewer)
@@ -16,6 +16,7 @@ setwd('/data/Alexi_Duhe/test1_ATAC')
 
 load("/data/Alexi_Duhe/test1/GRCh38_mapped_matched_human_demux.RData")
 load("/data/Alexi_Duhe/test1/GRCh38_mapped_removed_rat_assigned_demux.RData")
+load('/data/Alexi_Duhe/test1/GRCh38_mapped_after_QC_list.RData')
 load("~/NVME/scARC_Duan_018/R_scARC_Duan_018/codes/EnsDb_UCSC_hg38_annotation.RData")
 
 # read h5, remove rat cells and genes ####
@@ -49,36 +50,35 @@ group.id <- sub('-.*', '', name.id)
 # create names vector to store names variables in vector
 
 
-
-for (i in 1){
-  h5.file <- Read10X_h5(filename = h5.list[i])
-  cat("h5: ", str_extract(string = h5.list[i],
-                          pattern = "[0-9]+-[0-6]"))
-  frag.path <- frag.list[i]
-  
-
-  chromAssay <- CreateChromatinAssay(counts = counts,
-                                     sep = c(":", "-"),
-                                     fragments = frag,
-                                     annotation = ens_use)
-
-}
-  chrom.obj <- CreateSeuratObject(counts = chromAssay,
-                            assay = 'peaks',
-                            project = name.id[i])
-  
-}
-  
-  
-  # chrom.obj <-CreateSeuratObject(counts = h5.file$`Gene Expression`,
-  #                                assay = 'RNA',
-  #                                project = name.id[i])
-  # 
-  # chrom.obj[['ATAC']] <- CreateChromatinAssay(counts = h5.file$Peaks,
-  #                                             sep = c(':', '-'),
-  #                                             fragments = frag.path,
-  #                                             annotation = ens_use)
-  
+#----
+# for (i in 1){
+#   h5.file <- Read10X_h5(filename = h5.list[i])
+#   cat("h5: ", str_extract(string = h5.list[i],
+#                           pattern = "[0-9]+-[0-6]"))
+#   frag.path <- frag.list[i]
+#   
+#   
+#   chromAssay <- CreateChromatinAssay(counts = h5.file,
+#                                      sep = c(":", "-"),
+#                                      fragments = frag,
+#                                      annotation = ens_use)
+#   
+#   chrom.obj <- CreateSeuratObject(counts = chromAssay,
+#                                   assay = 'peaks',
+#                                   project = name.id[i])
+#   
+# }
+# 
+# 
+# chrom.obj <-CreateSeuratObject(counts = h5.file$`Gene Expression`,
+#                                assay = 'RNA',
+#                                project = name.id[i])
+# 
+# chrom.obj[['ATAC']] <- CreateChromatinAssay(counts = h5.file$Peaks,
+#                                             sep = c(':', '-'),
+#                                             fragments = frag.path,
+#                                             annotation = ens_use)
+#----
 
 
 for (i in 1:length(ATAC.list)){
@@ -91,11 +91,33 @@ for (i in 1:length(ATAC.list)){
                                 assay = 'RNA')
   
   rna.dat[['ATAC']] <- CreateChromatinAssay(counts = h5.file$Peaks,
-                                            sep = c(':', '-'),
-                                            fragments = frag.path,
-                                            annotation = ens_use)
+                                                     sep = c(':', '-'),
+                                                     fragments = frag.path,
+                                                     annotation = ens_use)
   ATAC.list[[i]] <- rna.dat
 }
+
+
+
+# for (i in 1:length(ATAC.list)){
+#   cat("h5: ", str_extract(string = h5.list[i],
+#                           pattern = "[0-9]+-[0-6]"))
+#   h5.file <- Read10X_h5(filename = h5.list[i])
+#   
+#   frag.path <- frag.list[i]
+#   
+#   DefaultAssay(QCed.list[[i]]) <- 'RNA'
+#   
+#   
+#   rna.dat[['ATAC']] <- CreateChromatinAssay(counts = h5.file$Peaks,
+#                                             sep = c(':', '-'),
+#                                             fragments = frag.path,
+#                                             annotation = ens_use)
+#   
+#   QCed.list[[i]] <- rna.dat
+#   
+# }
+
 
 
 # Quality control ----
@@ -111,6 +133,10 @@ for (i in 1:length(ATAC.list)) {
 
 
 for (i in 1:length(ATAC.list)) {
+  
+  ATAC.list[[i]] <- PercentageFeatureSet(ATAC.list[[i]],
+                                       pattern = "^MT-",
+                                       col.name = 'percent.mt')
   
   ATAC.list[[i]] <- subset(ATAC.list[[i]], 
                            subset = nFeature_ATAC > 300 & 
@@ -128,63 +154,63 @@ for (i in 1:length()) {
   peaks <- CallPeaks(ATAC.list[[i]])
   
   
-
-
-
-
-
+  
+  
+  
+  
+  
 }
 
 
 
-  
-  
-
-  
-  use.intv <-
-    chrom.obj@assays$ATAC@counts@Dimnames[[1]][str_detect(chrom.obj@assays$ATAC@counts@Dimnames[[1]], "^chr")]
-
-
-  counts <-
-    chrom.obj@assays$ATAC@counts[(which(rownames(chrom.obj@assays$ATAC@counts) %in% use.intv)), ]
 
 
 
-  # chrom.obj <- subset(chrom.obj@assays$ATAC, features = rownames(counts))
+
+use.intv <-
+  chrom.obj@assays$ATAC@counts@Dimnames[[1]][str_detect(chrom.obj@assays$ATAC@counts@Dimnames[[1]], "^chr")]
+
+
+counts <-
+  chrom.obj@assays$ATAC@counts[(which(rownames(chrom.obj@assays$ATAC@counts) %in% use.intv)), ]
+
+
+
+# chrom.obj <- subset(chrom.obj@assays$ATAC, features = rownames(counts))
+
+
+df.cell.counts$total[i] <- ncol(chrom.obj)
+# assign library identity
+chrom.obj$time.ident <- paste0(time.id[i], "hr")
+
+print(unique(chrom.obj$time.ident))
+
+# assign rat identity
+humanbc <- colnames(human.list[[i]])
+
+
+chrom.obj$rat.ident <- "rat"
+chrom.obj$rat.ident[colnames(chrom.obj) %in% humanbc] <- "human"
+
+
+df.cell.counts$rat[i] <- sum(chrom.obj$rat.ident == "rat")
+df.cell.counts$nonrat[i] <- sum(chrom.obj$rat.ident == "human")
+
+
+chrom.obj$cell.line.ident <- "unmatched"
+lines <- unique(human.list[[i]]$cell.line.ident)
+
+
+for (l in lines) {
   
-  
-  df.cell.counts$total[i] <- ncol(chrom.obj)
-  # assign library identity
-  chrom.obj$time.ident <- paste0(time.id[i], "hr")
-  
-  print(unique(chrom.obj$time.ident))
-  
-  # assign rat identity
-  humanbc <- colnames(human.list[[i]])
-  
-  
-  chrom.obj$rat.ident <- "rat"
-  chrom.obj$rat.ident[colnames(chrom.obj) %in% humanbc] <- "human"
-  
-  
-  df.cell.counts$rat[i] <- sum(chrom.obj$rat.ident == "rat")
-  df.cell.counts$nonrat[i] <- sum(chrom.obj$rat.ident == "human")
-  
-  
-  chrom.obj$cell.line.ident <- "unmatched"
-  lines <- unique(human.list[[i]]$cell.line.ident)
-  
-  
-  for (l in lines) {
-    
-    chrom.obj$cell.line.ident[colnames(chrom.obj) %in% colnames(human.list[[i]])[human.list[[i]]$cell.line.ident == l]] <- l
-  }
-  
-  df.cell.counts$human[i] <- sum(chrom.obj$cell.line.ident != "unmatched")
-  df.cell.counts$nonhuman[i] <- sum(chrom.obj$cell.line.ident == "unmatched")
-  
-  ATAC.list[[i]] <- chrom.obj
-  
+  chrom.obj$cell.line.ident[colnames(chrom.obj) %in% colnames(human.list[[i]])[human.list[[i]]$cell.line.ident == l]] <- l
+}
+
+df.cell.counts$human[i] <- sum(chrom.obj$cell.line.ident != "unmatched")
+df.cell.counts$nonhuman[i] <- sum(chrom.obj$cell.line.ident == "unmatched")
+
+ATAC.list[[i]] <- chrom.obj
+
 }
 
 
