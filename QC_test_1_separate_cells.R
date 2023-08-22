@@ -1,6 +1,6 @@
 # Alexandra Duhe 8/3/2023 9:00 AM
 #~/NVME/scARC_Duan_018/Duan_project_025_RNA/Analysis_part1_hybrid_genome/20230503_separate_human_from_rat_in_025_17_and_46_new_libraries-copy.R
-#ppp
+#weds
 
 # load libraries
 library(Seurat)
@@ -42,13 +42,10 @@ h5.list <- list.files('/data/FASTQ/Duan_Project_025_hybrid',
 # Merge data files using for-loop ----
 
 raw.hybrid <- vector(mode = 'list', length = length(h5.list))
-
-# extract name identifier
 name.id <- str_extract(h5.list,
                        pattern = '[0-9]+-[0-6]') #group+time
 time.id <- sub('.*-', '', name.id)
 group.id <- sub('-.*', '', name.id)
-
 
 for (i in 1:length(h5.list)) {
 
@@ -58,7 +55,6 @@ for (i in 1:length(h5.list)) {
 
   raw.hybrid[[i]] <- CreateSeuratObject(counts = h5file$`Gene Expression`,
                                         project = name.id)
-
   raw.hybrid[[i]]$time.ident <- time.id[[i]]
   raw.hybrid[[i]]$group.ident <- group.id[[i]]
 
@@ -67,7 +63,6 @@ for (i in 1:length(h5.list)) {
 }
 
 # 1. %MT read ----
-# transformed object
 trans.obj <-raw.hybrid
 
 for (i in 1:length(trans.obj)) {
@@ -80,12 +75,6 @@ print(paste0('Now at ', i))
                                        col.name = 'percent.mt')
 
   trans.obj[[i]] <- FindVariableFeatures(trans.obj[[i]], nfeatures = 3000)
-
-  # 2. Filtering
-  # trans.obj[[i]] <- subset(objlist[[i]],
-  #                        subset = nFeature_RNA > 300 &
-  #                        nFeature_RNA < 7500 &
-  #                        percent.mt < 20)
 
   # 3. Normalize & Identify highly variable features
   trans.obj[[i]] <- SCTransform(trans.obj[[i]],
@@ -100,7 +89,6 @@ print(paste0('Now at ', i))
 # 5. Clustering ----
 
 ffeatures <- c('Gfap', 'S100b', 'GAD1', 'SLC17A6')
-
 scale.obj <-trans.obj
 
 for (i in 1:length(scale.obj)) {
@@ -138,7 +126,6 @@ for (i in 1:length(scale.obj)) {
   colorpal <- viridis(n = 10,
                         option = 'C',
                         direction = -1)
-
   png(paste0(name.id[[i]], '_specific_genes.png'))
   plot.feature <- FeaturePlot(scale.obj[[i]],
                                 features = ffeatures, ncol = 2)
@@ -156,7 +143,6 @@ for (i in 1:length(scale.obj)) {
 
   print(plot.feature + plot.dim + plot.violin)
 }
-
 
 rrc.at.group <- list(c(10,8,13),  #objlist[[1]]  9-0
                      c(6,12),     #objlist[[2]]  9-1
@@ -186,7 +172,6 @@ clean.objlist <- vector(mode = 'list', length = length(rat.obj))
 for (i in 1:length(rat.obj)) {
 
   rrc.at.group <- remove.rat.clusters[[i]]
-
   cat('rat cluster number: ', rrc.at.group[[i]])
 
 	rat.obj[[i]]$rat.ident <- 'human'
