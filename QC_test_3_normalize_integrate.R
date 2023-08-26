@@ -22,6 +22,21 @@ options(future.globals.maxSize = 207374182400)
 load('GRCh38_mapped_after_QC_list.RData')
 
 
+h5.list <- list.files('/data/FASTQ/Duan_Project_025_hybrid',
+                      'filtered_feature_bc_matrix.h5',
+                      recursive = TRUE,
+                      include.dirs = FALSE,
+                      full.names = TRUE)
+
+# Initialize variables and data structures
+name.id <- str_extract(h5.list, '[0-9]+-[0-6]')#group+time
+# extract the time identifier from path list created in h5.list at ith file
+time.id <- sub('.*-', '', name.id)
+# extract the group identifier from path list created in h5.list at ith file
+group.id <- sub('-.*', '', name.id)
+
+
+
 
 # Normalize and transform the data ----
 
@@ -128,7 +143,7 @@ integrated.data <- FindNeighbors(integrated.data, reduction = 'pca',
                                  dims = 1:30)
 
 # Perform clustering using Louvain algorithm
-integrated.data <- FindClusters(integrated.data, resolution = 0.5,
+integrated.data <- FindClusters(integrated.data, resolution = 0.6,
                                 random.seed = 11)
 
 library.colors <- DiscretePalette(n = length(unique(Idents(integrated.data))),
@@ -139,12 +154,32 @@ p1 <- DimPlot(integrated.data,
               label = T,
               group.by = 'seurat_clusters',
               raster = F) +
-  NoLegend() +
   ggtitle('Clustering RNAseq data') +
   theme(text = element_text(size = 12),
         axis.text = element_text(size = 12))
 print(p1)
 
+# remove cluster 17
+integrated.data <- subset(integrated.data, seurat_clusters != '17')
+Idents(integrated.data) <- 'seurat_clusters'
+clust <- c('1', '2', '3', '4', '5', '6',
+                    '7', '8', '9', '10', '11', '12', '13',
+                    '14', '15', '16', '17', '18', '19', '20')
+names(clust) <- levels(integrated.data)
+integrated.data <- RenameIdents(integrated.data, clust)
+
+DimPlot(integrated.data,
+        reduction = 'umap',
+        label = TRUE,
+        repel = FALSE,
+        pt.size = 0.3,
+        raster = F,
+        cols = library.colors) +
+  ggtitle('Clustiering RNAseq Data') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+DefaultAssay(integrated.data) <- 'integrated'
 # Create DimPlot based on orig identifiers
 DimPlot(integrated.data,
         label = FALSE,
@@ -164,29 +199,66 @@ DimPlot(integrated.data,
         axis.text = element_text(size = 12))
 
 lib.nine <- subset(integrated.data, orig.ident == '09-0' |
-                 orig.ident == '09-1' |
-                 orig.ident == '09-6')
+                     orig.ident == '09-1' |
+                     orig.ident == '09-6')
 
 DimPlot(lib.nine,
         label = FALSE,
         cols = library.colors,
         group.by = 'orig.ident') +
-ggtitle('Library 09') +
+  ggtitle('Library 09') +
   theme(text = element_text(size = 12),
         axis.text = element_text(size = 12))
 
 no.lib.nine <- subset(integrated.data, orig.ident != '09-0' &
-                       orig.ident != '09-1' &
-                       orig.ident != '09-6')
+                        orig.ident != '09-1' &
+                        orig.ident != '09-6')
 
 DimPlot(no.lib.nine,
         label = FALSE,
         cols = library.colors,
         group.by = 'orig.ident',
         raster = F) +
-ggtitle('Without Library 09') +
+  ggtitle('Without Library 09') +
   theme(text = element_text(size = 12),
         axis.text = element_text(size = 12))
+
+
+
+
+# for (i in 1:length(name.id) - 3) {
+#
+#
+#
+#   lib <- subset(integrated.data, orig.ident == (name.id[i]) |
+#                        orig.ident == (name.id[i + 1]) |
+#                        orig.ident == (name.id[i + 2]))
+#
+#   DimPlot(lib,
+#           label = FALSE,
+#           cols = library.colors,
+#           group.by = 'orig.ident') +
+#     ggtitle('Library ', paste0(group.id[i])) +
+#     theme(text = element_text(size = 12),
+#           axis.text = element_text(size = 12))
+#
+#   no.lib <- subset(integrated.data, orig.ident != (name.id[i]) &
+#                           orig.ident != (name.id[i + 1]) &
+#                           orig.ident != (name.id[i + 2]))
+#
+#   DimPlot(no.lib,
+#           label = FALSE,
+#           cols = library.colors,
+#           group.by = 'orig.ident',
+#           raster = F) +
+#     ggtitle('Without Library ', paste0(group.id[i])) +
+#     theme(text = element_text(size = 12),
+#           axis.text = element_text(size = 12))
+#
+#
+# }
+
+
 
 # Cell type identification ----
 
@@ -241,9 +313,11 @@ VlnPlot(integrated.data,
   ggtitle('Expression by Gene Identity')
 
 
-save(integrated.data, file = '08_25_2023_work.RData')
-save(anchors, file = '08_25_2023_anchors.RData')
-
+# save(integrated.data, file = '08_25_2023_work.RData')
+# save(anchors, file = '08_25_2023_anchors.RData')
+#
+# load('08_25_2023_work.RData')
+# load('08_25_2023_anchors.RData')
 
 
 
@@ -251,11 +325,39 @@ save(anchors, file = '08_25_2023_anchors.RData')
 Idents(integrated.data) <- 'seurat_clusters'
 
 # Define new cluster identifiers
+# new.cluster.ids
+#     NEFM+ glut
+#     GABA
+#     SST+ GABA
+#     NEFM- glut
+#     SEMA3E+ GABA
+#     NEFM- glut
+#     immature
+#     unknown
+
+
 new.cluster.ids <-
-  c("NEFM- glut", "NEFM+ glut", "NEFM- glut", "NEFM+ glut", "GABA",
-    "GABA", "NEFM- glut", "SST+ GABA", "NEFM- glut", "NEFM- glut",
-    "SEMA3E+ GABA", "NEFM- glut", "NEFM- glut", "GABA", "GABA",
-    "unknown neuron", "immature neuron", "unknown", "unknown", "unknown")
+  c("NEFM+ glut", #1
+    "NEFM- glut", #2
+    "GABA", #3
+    "NEFM- glut", #4
+    "SEMA3E+ GABA", #5
+    "GABA", #6
+    "NEFM+ glut", #7
+    "NEFM+ glut", #8
+    "GABA",#9
+    "GABA",#10
+    "SST+ GABA", #11
+    "immature", #12
+    "NEFM- glut", #13
+    "unknown", #14
+    "NEFM- glut", #15
+    "NEFM- glut", #16
+    "GABA", #17
+    "NEFM- glut", #18
+    'GABA',#19
+    'immature') #20
+
 
 # length(new.cluster.ids)
 #length(unique(integrated.data$seurat_clusters))
@@ -271,37 +373,57 @@ DimPlot(integrated.labeled,
         label = TRUE,
         repel = FALSE,
         pt.size = 0.3,
+        raster = F,
         cols = c("#E6D2B8", #nmglut
                  "#CCAA7A", #npglut
                  "#B33E52", #GABA
                  "#E6B8BF", #SST GABA
                  "#CC7A88", #SEMA3E GABA
                  "#0075DC", #immature neuron
-                 "#4C005C", #unknown neuron
-                 "#993F00", #unknown
-                 "#996F00")) + #unknown
-  ggtitle('labeled by cell type') +
-  theme(text = element_text(size = 10),
-        axis.text = element_text(size = 10))
+                 "#4C005C",
+                 "#993F00")) + #unknown
+  ggtitle('Labeled by Cell Type') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
 
-### Siwei test code ######
+cell.ctn <- table(integrated.data@meta.data$seurat_clusters)
+
 DimPlot(integrated.labeled,
         reduction = 'umap',
         label = TRUE,
         repel = FALSE,
         pt.size = 0.3,
+        raster = F,
         cols = c("#E6D2B8", #nmglut
                  "#CCAA7A", #npglut
                  "#B33E52", #GABA
                  "#E6B8BF", #SST GABA
                  "#CC7A88", #SEMA3E GABA
                  "#0075DC", #immature neuron
-                 "#4C005C", #unknown neuron
-                 "#993F00", #unknown
-                 "#996F00")) + #unknown
-  ggtitle('labeled by cell type') +
-  theme(text = element_text(size = 10),
-        axis.text = element_text(size = 10))
+                 "#4C005C",
+                 "#993F00")) + #unknown
+  ggtitle('Labeled by Cell Type') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+# ### Siwei test code ######
+# DimPlot(integrated.labeled,
+#         reduction = 'umap',
+#         label = TRUE,
+#         repel = FALSE,
+#         pt.size = 0.3,
+#         cols = c("#E6D2B8", #nmglut
+#                  "#CCAA7A", #npglut
+#                  "#B33E52", #GABA
+#                  "#E6B8BF", #SST GABA
+#                  "#CC7A88", #SEMA3E GABA
+#                  "#0075DC", #immature neuron
+#                  "#4C005C", #unknown neuron
+#                  "#993F00", #unknown
+#                  "#996F00")) + #unknown
+#   ggtitle('labeled by cell type') +
+#   theme(text = element_text(size = 10),
+#         axis.text = element_text(size = 10))
 
 ###
 
@@ -353,6 +475,7 @@ for (i in 1:length(types)) {
 
 # Create a DimPlot to visualize clusters labeled by cell type counts
 DimPlot(integrated.labeled, reduction = "umap", group.by = "cell.type.counts",
+        raster = F,
         label = TRUE, repel = F, pt.size = 0.3,
         cols = c("#B33E52",
                  "#E6D2B8",
@@ -740,52 +863,3 @@ load("integrated_clustered_obj.RData")
 # # Save the labeled integrated data to a file
 # save(integrated_labeled, file = "integrated_labeled.RData")
 # #
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
