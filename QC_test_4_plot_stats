@@ -608,27 +608,48 @@ for (k in 1:length(times)){
   time_type_sum[[k]] <- df
 }
 
-for (i in 1:3){
-  df_to_plot <- time_type_sum[[i]]
-  p <- ggplot(data = df_to_plot,
-              aes(x = cell.line,
-                  y = counts,
-                  fill = cell.type)) +
-    geom_col(position = "fill") +
-    scale_fill_manual(values = c("#B33E52", #GABA
-                                 "#CC7A88", #SEMA3E GABA
-                                 "#E6D2B8", #nmglut
-                                 "#CCAA7A" #npglut
-    )) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          plot.title = element_text(hjust = 0.5)) +
-    xlab("Cell Line") +
-    ylab("Cellular composition (%)") +
-    labs(fill = "Cell Types") +
-    ggtitle(times[i])
-  print(p)
+# for (i in 1:3){
+#   df_to_plot <- time_type_sum[[i]]
+#   p <- ggplot(data = df_to_plot,
+#               aes(x = cell.line,
+#                   y = counts,
+#                   fill = cell.type)) +
+#     geom_col(position = "fill") +
+#     scale_fill_manual(values = c("#B33E52", #GABA
+#                                  "#CC7A88", #SEMA3E GABA
+#                                  "#E6D2B8", #nmglut
+#                                  "#CCAA7A" #npglut
+#     )) +
+#     theme(axis.text.x = element_text(angle = 45, hjust = 1),
+#           plot.title = element_text(hjust = 0.5)) +
+#     xlab("Cell Line") +
+#     ylab("Cellular composition (%)") +
+#     labs(fill = "Cell Types") +
+#     ggtitle(times[i])
+#   print(p)
+# }
 
+for (i in 1:3) {
+df_to_plot <- time_type_sum[[i]]
+p <- ggplot(df_to_plot,
+            aes(x = cell.line,
+                y = counts,
+                fill = cell.type)) +
+geom_col(position = 'fill') +
+scale_fill_manual(values = c('#B33E52',
+                             '#CC7A88',
+                             '#E6D2B8',
+                             '#CCAA7A')) +
+theme(axis.text.x = element_text(angle = 45, hjust = 1),
+      plot.title = element_text(hjust = 0.5)) +
+xlab('Cell Line') +
+ylab('Cellular Composition (%)') +
+labs(fill = 'Cell Types') +
+ggtitle(times[i])
+print(p)
 }
+
+head(df_to_plot)
 for (i in 1:3){
   write.table(time_type_sum[[i]],
               file = paste0("./cell_counts_filtered_cell_type_", times[i], ".csv"),
