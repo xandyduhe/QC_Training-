@@ -23,65 +23,86 @@ load("~/Data/Alexi_Duhe/test1/integrated_labeled.RData")
 #load("~/NVME/scARC_Duan_018/R_scARC_Duan_018/codes/EnsDb_UCSC_hg38_annotation.RData")
 
 
-lines <- sort(unique(integrated.labeled$cell.line.ident))
-lines
+cell.line.ids <- sort(unique(integrated.labeled$cell.line.ident))
+
 integrated.labeled <- subset(integrated.labeled, cell.type != "unidentified" & cell.type != 'immature')
-types <- as.vector(unique(integrated.labeled$cell.type))
-types
+cell.type.ids <- as.vector(unique(integrated.labeled$cell.type))
+cell.type.ids
 times <- unique(integrated.labeled$time.ident)
 times
 batch <- c()
 
 
-# create list of size lines(20) X types(3) =  60 where all values = NA, to store
-rownames <- rep_len(NA, (length(lines) * length(types)))
-# k is the "row number" incremented by types = 3
-k=1
+# create list of size lines(20) X cell.type.ids(3) =  60 where all values = NA, to store
+rownames <- rep_len(NA, (length(cell.line.ids) * length(cell.type.ids)))
+# k is the "row number" incremented by cell.type.ids = 3
+k = 1
 # loop through lines(20)
-for (i in 1:length(lines)) {
-  print(paste0('line = ', lines[i]))
-  #create obj with ONLY current cell line @ lines[i]
-  ith.cell.line.obj <- subset(integrated.labeled, cell.line.ident == lines[i])
-  for (l in 1:length(types)){
+for (i in 1:length(cell.line.ids)) {
+  print(paste0('line = ', cell.line.ids[i])
+        )
+  #create obj with ONLY current cell line @ cell.line.ids[i]
+  ith.cell.line.obj <- subset(obj, cell.line.ident == cell.line.ids[i])
+
+  for (l in 1:length(cell.type.ids)){
+
     # add the l-th cell type to the list of 60
-    rownames[k] <- paste(lines[i], types, sep = '_')
+    rownames[k] <- paste(cell.line.ids[i], cell.type.ids, sep = '_')
     print(paste("Rownames of k = ", rownames[k]))
-    # create obj with ONLY current cell type @ types[l] .
-    lth.cell.type.obj <- subset(ith.cell.line.obj, cell.type == types[l])
+
+    # create obj with ONLY current cell type @ cell.type.ids[l] .
+    lth.cell.type.obj <- subset(ith.cell.line.obj, cell.type == cell.type.ids[l])
+
     # add 1 to k to move to next row in rownames
     if (i == 1 & l == 1) {
-      c
+      cmp.mat <- edgeR::cpm(rowSums(lth.cell.type.obj@assays$SCT@counts),
+                            normalized.lib.sizes = T, log = F)
+      cpm.mat <- cpm.mat[, 1]
+    } else {
+      to.bind <- edgeR::cmp(rowSums(lth.cell.type.obj@assays$SCT@counts),
+                            normalized.lib.sizes = T, log = F)
+      to.bind <- to.bind[, 1]
+      cpm.mat <- rbind(cpm.mat, to.bind)
     }
     k = k + 1
   }
   }
 
 # auxiliary functions ####
-makeCpmMatCelltypes_RNA <- function(obj1, lines_1, types) {
-  rownames <- rep_len(NA, (length(lines_1) * length(types)))
+makeCpmMatCelltypes_RNA <- function(obj, cell.line.ids, cell.type.ids) {
+  # create list of size lines(20) X cell.type.ids(3) =  60 where all values = NA, to store
+  rownames <- rep_len(NA, (length(cell.line.ids) * length(cell.type.ids)))
+  # k is the "row number" incremented by cell.type.ids = 3
   k = 1
-  for (i in 1:length(lines_1)) {
-    print(paste0('line = ', lines_1[i]))
-    rownames[k] <- lines_1[i]
-    rownames[k + 1] <- lines_1[i]
-    rownames[k + 2] <- lines_1[i]
-    obj <- subset(obj1, cell.line.ident == lines_1[i])
-    for (l in 1:length(types)) {
-      t <- types[l]
-      rownames[k] <- paste(rownames[k], t, sep = "_")
-      print(paste("rownames of k = ",
-                  rownames[k]))
-      subtype <- subset(obj, cell.type == t)
+  # loop through lines(20)
+  for (i in 1:length(cell.line.ids)) {
+    print(paste0('line = ', cell.line.ids[i])
+    )
+    #create obj with ONLY current cell line @ cell.line.ids[i]
+    ith.cell.line.obj <- subset(obj, cell.line.ident == cell.line.ids[i])
+
+    for (l in 1:length(cell.type.ids)){
+
+      # add the l-th cell type to the list of 60
+      rownames[k] <- paste(cell.line.ids[i], cell.type.ids, sep = '_')
+      print(paste("Rownames of k = ", rownames[k]))
+
+      # create obj with ONLY current cell type @ cell.type.ids[l] .
+      lth.cell.type.obj <- subset(ith.cell.line.obj, cell.type == cell.type.ids[l])
+
+      # add 1 to k to move to next row in rownames
       if (i == 1 & l == 1) {
-        cpm_mat <- edgeR::cpm(rowSums(subtype@assays$SCT@counts), normalized.lib.sizes = T, log = F)
-        cpm_mat <- cpm_mat[, 1]
+        cmp.mat <- edgeR::cpm(rowSums(lth.cell.type.obj@assays$SCT@counts),
+                              normalized.lib.sizes = T, log = F)
+        cpm.mat <- cpm.mat[, 1]
       } else {
-        to_bind <- edgeR::cpm(rowSums(subtype@assays$SCT@counts), normalized.lib.sizes = T, log = F)
-        to_bind <- to_bind[, 1]
-        cpm_mat <- rbind(cpm_mat, to_bind)
+        to.bind <- edgeR::cmp(rowSums(lth.cell.type.obj@assays$SCT@counts),
+                              normalized.lib.sizes = T, log = F)
+        to.bind <- to.bind[, 1]
+        cpm.mat <- rbind(cpm.mat, to.bind)
       }
       k = k + 1
-      print(paste0("k =", k))
+
     }
   }
   rownames(cpm_mat) <- rownames
