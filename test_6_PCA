@@ -32,21 +32,26 @@ times <- unique(integrated.labeled$time.ident)
 times
 batch <- c()
 
-# create vector of size lines(20) X types(3) where all values = NA, to store
+
+# create list of size lines(20) X types(3) =  60 where all values = NA, to store
 rownames <- rep_len(NA, (length(lines) * length(types)))
-# k is the row number for filling in info for rownames vector
+# k is the "row number" incremented by types = 3
 k=1
 # loop through lines(20)
 for (i in 1:length(lines)) {
   print(paste0('line = ', lines[i]))
-  # add cell line id to each column value of row = k
-  rownames[k] <- lines[i]
-  rownames[k + 1] <- lines[i]
-  rownames[k + 2] <- lines[i]
-  #create seurat object for the current cell line[i]
-  obj <- subset(integrated.labeled, cell.line.ident == lines[i])
+  #create obj with ONLY current cell line @ lines[i]
+  ith.cell.line.obj <- subset(integrated.labeled, cell.line.ident == lines[i])
   for (l in 1:length(types)){
+    # add the l-th cell type to the list of 60
+    rownames[k] <- paste(lines[i], types, sep = '_')
+    print(paste("Rownames of k = ", rownames[k]))
+    # create obj with ONLY current cell type @ types[l] .
+    lth.cell.type.obj <- subset(ith.cell.line.obj, cell.type == types[l])
     # add 1 to k to move to next row in rownames
+    if (i == 1 & l == 1) {
+      c
+    }
     k = k + 1
   }
   }
