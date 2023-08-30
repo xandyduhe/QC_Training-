@@ -1,5 +1,5 @@
 #~/NVME/scARC_Duan_018/Duan_project_025_RNA/Analysis_part2_GRCh38/20221122_PCA_for_025_RNAseq_celllines.R
-# init ####
+# init #### Good
 library(Seurat)
 library(Signac)
 library(edgeR)
@@ -20,86 +20,45 @@ setwd('~/Data/Alexi_Duhe/test1')
 load("~/Data/Alexi_Duhe/test1/integrated_labeled.RData")
 
 
-#load("~/NVME/scARC_Duan_018/R_scARC_Duan_018/codes/EnsDb_UCSC_hg38_annotation.RData")
-
-
-cell.line.ids <- sort(unique(integrated.labeled$cell.line.ident))
-
 integrated.labeled <- subset(integrated.labeled, cell.type != "unidentified" & cell.type != 'immature')
+cell.line.ids <- sort(unique(integrated.labeled$cell.line.ident))
 cell.type.ids <- as.vector(unique(integrated.labeled$cell.type))
-cell.type.ids
 times <- unique(integrated.labeled$time.ident)
-times
+
 batch <- c()
 
-
-# create list of size lines(20) X cell.type.ids(3) =  60 where all values = NA, to store
-rownames <- rep_len(NA, (length(cell.line.ids) * length(cell.type.ids)))
-# k is the "row number" incremented by cell.type.ids = 3
-k = 1
-# loop through lines(20)
-for (i in 1:length(cell.line.ids)) {
-  print(paste0('line = ', cell.line.ids[i])
-        )
-  #create obj with ONLY current cell line @ cell.line.ids[i]
-  ith.cell.line.obj <- subset(obj, cell.line.ident == cell.line.ids[i])
-
-  for (l in 1:length(cell.type.ids)){
-
-    # add the l-th cell type to the list of 60
-    rownames[k] <- paste(cell.line.ids[i], cell.type.ids, sep = '_')
-    print(paste("Rownames of k = ", rownames[k]))
-
-    # create obj with ONLY current cell type @ cell.type.ids[l] .
-    lth.cell.type.obj <- subset(ith.cell.line.obj, cell.type == cell.type.ids[l])
-
-    # add 1 to k to move to next row in rownames
-    if (i == 1 & l == 1) {
-      cmp.mat <- edgeR::cpm(rowSums(lth.cell.type.obj@assays$SCT@counts),
-                            normalized.lib.sizes = T, log = F)
-      cpm.mat <- cpm.mat[, 1]
-    } else {
-      to.bind <- edgeR::cmp(rowSums(lth.cell.type.obj@assays$SCT@counts),
-                            normalized.lib.sizes = T, log = F)
-      to.bind <- to.bind[, 1]
-      cpm.mat <- rbind(cpm.mat, to.bind)
-    }
-    k = k + 1
-  }
-  }
-
 # auxiliary functions ####
-makeCpmMatCelltypes_RNA <- function(obj, cell.line.ids, cell.type.ids) {
+makeCpmMatCelltypes_RNA <- function(obj, cell_line, cell_type) {
   # create list of size lines(20) X cell.type.ids(3) =  60 where all values = NA, to store
-  rownames <- rep_len(NA, (length(cell.line.ids) * length(cell.type.ids)))
+  rownames <- rep_len(NA, (length(cell_line) * length(cell_type)))
   # k is the "row number" incremented by cell.type.ids = 3
   k = 1
   # loop through lines(20)
-  for (i in 1:length(cell.line.ids)) {
-    print(paste0('line = ', cell.line.ids[i])
-    )
-    #create obj with ONLY current cell line @ cell.line.ids[i]
-    ith.cell.line.obj <- subset(obj, cell.line.ident == cell.line.ids[i])
+  for (i in 1:length(cell_line)) {
+    print(paste0('line = ', cell_line[i]))
 
-    for (l in 1:length(cell.type.ids)){
+    #create obj with ONLY current cell line @ cell.line.ids[i]
+    ith.cell.line.obj <- subset(obj, cell.line.ident == cell_line[i])
+
+    for (l in 1:length(cell_type)){
 
       # add the l-th cell type to the list of 60
-      rownames[k] <- paste(cell.line.ids[i], cell.type.ids, sep = '_')
+      rownames[k] <- paste(cell_line[i], cell_type[l], sep = '_')
       print(paste("Rownames of k = ", rownames[k]))
 
       # create obj with ONLY current cell type @ cell.type.ids[l] .
-      lth.cell.type.obj <- subset(ith.cell.line.obj, cell.type == cell.type.ids[l])
+      lth.cell.type.obj <- subset(ith.cell.line.obj, cell.type == cell_type[l])
 
       # add 1 to k to move to next row in rownames
       if (i == 1 & l == 1) {
-        cmp.mat <- edgeR::cpm(rowSums(lth.cell.type.obj@assays$SCT@counts),
+        cpm_mat <- edgeR::cpm(rowSums(lth.cell.type.obj@assays$SCT@counts),
                               normalized.lib.sizes = T, log = F)
-        cpm.mat <- cpm.mat[, 1]
+        cpm_mat <- cpm_mat[, 1]
       } else {
-        to.bind <- edgeR::cmp(rowSums(lth.cell.type.obj@assays$SCT@counts),
+        to.bind <- edgeR::cpm(rowSums(lth.cell.type.obj@assays$SCT@counts),
                               normalized.lib.sizes = T, log = F)
         to.bind <- to.bind[, 1]
-        cpm.mat <- rbind(cpm.mat, to.bind)
+        cpm_mat <- rbind(cpm_mat, to.bind)
       }
       k = k + 1
 
@@ -110,7 +69,7 @@ makeCpmMatCelltypes_RNA <- function(obj, cell.line.ids, cell.type.ids) {
 }
 
 
-for (l in lines) {
+for (l in cell.line.ids) {
   print(l)
   batch <- c(batch,
              unique(str_split(integrated.labeled$orig.ident[integrated.labeled$cell.line.ident == l],
@@ -122,7 +81,7 @@ batch_more <- rep(batch, each = 3)
 # RNA - 1. look at how cell types cluster ####
 for (i in times) {
   subtime18 <- subset(integrated.labeled, time.ident == i)
-  cpm_mat <- makeCpmMatCelltypes_RNA(subtime18, lines, types)
+  cpm_mat <- makeCpmMatCelltypes_RNA(subtime18, cell.line.ids, cell.type.ids)
   pca_res <- PCA(cpm_mat, scale.unit = TRUE, ncp = 5, graph = F)
 
   p <- fviz_pca_ind(pca_res,
