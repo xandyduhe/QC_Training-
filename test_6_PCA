@@ -27,7 +27,7 @@ times <- unique(integrated.labeled$time.ident)
 
 batch <- c()
 
-# auxiliary functions ####
+# Type PCA function
 makeCpmMatCelltypes_RNA <- function(obj, cell_line, cell_type) {
   # create list of size lines(20) X cell.type.ids(3) =  60 where all values = NA, to store
   rownames <- rep_len(NA, (length(cell_line) * length(cell_type)))
@@ -68,6 +68,41 @@ makeCpmMatCelltypes_RNA <- function(obj, cell_line, cell_type) {
   return(cpm_mat)
 }
 
+# Time PCA info
+TimeCpmMat_RNA <- function(obj, cell_line, cell_time){
+  rownames <- rep_len(NA, (length(cell_line)*length(cell_time)))
+  k = 1
+  for (i in 1:length(cell_line)) {
+    print(paste0('line = ', cell_line[i]))
+    ith.cell.line.obj <- subset(obj, cell.line.ident == cell_line[i])
+
+    for (l in 1:length(cell_time)){
+
+      # add the l-th cell type to the list of 60
+      rownames[k] <- paste(cell_line[i], cell_time[l], sep = '_')
+      print(paste("Rownames of k = ", rownames[k]))
+
+      # create obj with ONLY current cell time @ cell.time.ids[l] .
+      lth.cell.time.obj <- subset(ith.cell.line.obj, time.ident == cell_time[l])
+
+      # add 1 to k to move to next row in rownames
+      if (i == 1 & l == 1) {
+        cpm_mat <- edgeR::cpm(rowSums(lth.cell.time.obj@assays$SCT@counts),
+                              normalized.lib.sizes = T, log = F)
+        cpm_mat <- cpm_mat[, 1]
+      } else {
+        to.bind <- edgeR::cpm(rowSums(lth.cell.time.obj@assays$SCT@counts),
+                              normalized.lib.sizes = T, log = F)
+        to.bind <- to.bind[, 1]
+        cpm_mat <- rbind(cpm_mat, to.bind)
+      }
+      k = k + 1
+
+    }
+  }
+  rownames(cpm_mat) <- rownames
+  return(cpm_mat)
+}
 
 for (l in cell.line.ids) {
   print(l)
@@ -78,7 +113,7 @@ for (l in cell.line.ids) {
 batch <- as.factor(batch)
 batch_more <- rep(batch, each = 3)
 
-# RNA - 1. look at how cell types cluster ####
+# Group Clusters labeled by cell line and CELL TYPE
 for (i in times) {
   subtime18 <- subset(integrated.labeled, time.ident == i)
   cpm_mat <- makeCpmMatCelltypes_RNA(subtime18, cell.line.ids, cell.type.ids)
@@ -113,3 +148,41 @@ for (i in times) {
   print(p)
 
 }
+
+# Group clusters labeled cell line and TIME POINT
+for (i in cell.type.ids) {
+  subtime <- subset(integrated.labeled, cell.type == i)
+  cpm_mat <- TimeCpmMat_RNA(subtime, cell.line.ids, times)
+  pca_res <- PCA(cpm_mat, scale.unit = TRUE, ncp = 5, graph = F)
+
+  p <- fviz_pca_ind(pca_res,
+                    repel = F,
+                    habillage = batch_more,
+                    palette = brewer.pal(name = "Paired", n = 10),
+                    show.legend = F,
+                    invisible = "quali", font.x = 10) +
+    theme_light() +
+    ggtitle(paste0("Cell lines x Time PCA colored by cocultured batch \n raw data - ",
+                   i))
+  print(p)
+
+  com_mat <- ComBat(
+    dat = t(cpm_mat),
+    batch = batch_more
+  )
+  pca_res <- PCA(t(com_mat), scale.unit = TRUE, ncp = 5, graph = TRUE)
+
+  p <- fviz_pca_ind(pca_res,
+                    repel = F,
+                    habillage = batch_more,
+                    palette = brewer.pal(name = "Paired", n = 10),
+                    show.legend = F,
+                    invisible = "quali", font.x = 10) +
+    theme_light() +
+    ggtitle(paste0("Cell lines x Time PCA colored by cocultured batch \n combat-corrected data - ",
+                   i))
+  print(p)
+
+}
+
+
