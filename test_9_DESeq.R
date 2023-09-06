@@ -45,18 +45,18 @@ res_GABA_1v6 <- results(dds_GABA, contrast =c ("condition", "6", "1"))
 
 
 # make colData df
-coldata_npglut <- data.frame(condition = str_extract(string = colnames(npglut_pseudobulk),
+coldata_npglut <- data.frame(condition = str_extract(string = colnames(npglut_mat_adj),
                                                      pattern = "[0|1|6]"),
-                             type = str_extract(string = colnames(npglut_pseudobulk),
-                                                pattern = "^[0-9]+-"))
-rownames(coldata_npglut) <- colnames(npglut_pseudobulk)
+                             type = str_extract(string = colnames(npglut_mat_adj),
+                                                pattern = "CD_[0-9]+"))
+rownames(coldata_npglut) <- colnames(npglut_mat_adj)
 
 # check
-all(rownames(coldata_npglut) %in% colnames(npglut_pseudobulk)) # TRUE
-all(rownames(coldata_npglut) == colnames(npglut_pseudobulk)) #TRUE
+all(rownames(coldata_npglut) %in% colnames(npglut_mat_adj)) # TRUE
+all(rownames(coldata_npglut) == colnames(npglut_mat_adj)) #TRUE
 
 # make deseq2 obj
-dds_npglut <- DESeqDataSetFromMatrix(countData = npglut_pseudobulk,
+dds_npglut <- DESeqDataSetFromMatrix(countData = npglut_mat_adj,
                                      colData = coldata_npglut,
                                      design = ~ type + condition)
 dds_npglut
@@ -67,18 +67,18 @@ res_npglut_0v6 <- results(dds_npglut, contrast =c ("condition", "6", "0"))
 res_npglut_1v6 <- results(dds_npglut, contrast =c ("condition", "6", "1"))
 
 # make colData df
-coldata_nmglut <- data.frame(condition = str_extract(string = colnames(nmglut_pseudobulk),
+coldata_nmglut <- data.frame(condition = str_extract(string = colnames(nmglut_mat_adj),
                                                      pattern = "[0|1|6]"),
-                             type = str_extract(string = colnames(nmglut_pseudobulk),
-                                                pattern = "^[0-9]+-"))
-rownames(coldata_nmglut) <- colnames(nmglut_pseudobulk)
+                             type = str_extract(string = colnames(nmglut_mat_adj),
+                                                pattern = "CD_[0-9]+"))
+rownames(coldata_nmglut) <- colnames(nmglut_mat_adj)
 
 # check
-all(rownames(coldata_nmglut) %in% colnames(nmglut_pseudobulk)) # TRUE
-all(rownames(coldata_nmglut) == colnames(nmglut_pseudobulk)) #TRUE
+all(rownames(coldata_nmglut) %in% colnames(nmglut_mat_adj)) # TRUE
+all(rownames(coldata_nmglut) == colnames(nmglut_mat_adj)) #TRUE
 
 # make deseq2 obj
-dds_nmglut <- DESeqDataSetFromMatrix(countData = nmglut_pseudobulk,
+dds_nmglut <- DESeqDataSetFromMatrix(countData = nmglut_mat_adj,
                                      colData = coldata_nmglut,
                                      design = ~ type + condition)
 dds_nmglut
