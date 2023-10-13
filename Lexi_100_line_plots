@@ -1,0 +1,708 @@
+# create visualization of Lexi's integrated date to compare 
+# to Siwei's and Alexandra's integrated data
+# the integrated data is from the 100 lines 
+
+
+library(Seurat)
+library(ggplot2)
+library(pals)
+library(stringr)
+library(future)
+library(glmGamPoi)
+library(cowplot)
+
+
+
+
+
+# load lexis data 
+load("/nvmefs/scARC_Duan_018/Integrated_all_RNAseq_data_analysis/018-030_RNA_integrated_labeled_with_harmony.RData")
+
+# Find nearest neighbors based on UMAP coordinates
+library.colors <- DiscretePalette(n = length(unique(Idents(integrated_labeled))),
+                                  'alphabet')
+
+# visualize the clustering  with dimentionality reduction plot 
+p1 <- DimPlot(integrated_labeled, 
+              cols = library.colors, 
+              label = T, 
+              group.by = 'seurat_clusters', 
+              raster = F) +
+  ggtitle('Clustering RNAseq data Lexi 100 lines') +
+  theme(text = element_text(size = 14), 
+        axis.text = element_text(size = 14))
+print(p1)
+library(RColorBrewer)
+my_cols = brewer.pal(84,"Dark2")
+#dimplot by library 
+DefaultAssay(integrated_labeled) <- 'integrated'
+# Create DimPlot based on orig identifiers
+DimPlot(integrated_labeled,
+        label = FALSE,
+        #cols=alpha(my_cols, 0.66),
+        group.by = 'orig.ident',
+        raster = F) +
+  ggtitle('By Library') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#09
+lib <- subset(integrated_labeled, orig.ident == '09-0' |
+                     orig.ident == '09-1' |
+                     orig.ident == '09-6')
+
+dim_09 <- DimPlot(lib,
+        label = FALSE,
+        group.by = 'orig.ident',
+        raster = F) +
+  ggtitle('Library 09') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#Library 13
+lib <- subset(integrated_labeled, orig.ident == '13-0' |
+                orig.ident == '13-1' |
+                orig.ident == '13-6')
+
+dim_13 <- DimPlot(lib,
+        label = FALSE,
+        group.by = 'orig.ident',
+        raster = F) +
+  ggtitle('Library 13') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#Library 17
+lib <- subset(integrated_labeled, orig.ident == '17-0' |
+                orig.ident == '17-1' |
+                orig.ident == '17-6')
+
+dim_17 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 17') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+#2
+lib <- subset(integrated_labeled, orig.ident == '2-0' |
+                orig.ident == '2-1' |
+                orig.ident == '2-6')
+
+dim_02 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 2') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#20063
+lib <- subset(integrated_labeled, orig.ident == '20063-0' |
+                orig.ident == '20063-1' |
+                orig.ident == '20063-6')
+
+dim_20063 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 20063') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#20087
+lib <- subset(integrated_labeled, orig.ident == '20087-0' |
+                orig.ident == '20087-1' |
+                orig.ident == '20087-6')
+
+dim_20087 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 20087') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#20088
+lib <- subset(integrated_labeled, orig.ident == '20088-0' |
+                orig.ident == '20088-1' |
+                orig.ident == '20088-6')
+
+dim_20088 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 20088') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#20111
+lib <- subset(integrated_labeled, orig.ident == '20111-0' |
+                orig.ident == '20111-1' |
+                orig.ident == '20111-6')
+
+dim_20111 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 20111') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#21
+lib <- subset(integrated_labeled, orig.ident == '21-0' |
+                orig.ident == '21-1' |
+                orig.ident == '21-6')
+
+dim_21 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 21') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#23
+lib <- subset(integrated_labeled, orig.ident == '23-0' |
+                orig.ident == '23-1' |
+                orig.ident == '23-6')
+
+dim_23 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 23') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#33
+lib <- subset(integrated_labeled, orig.ident == '33-0' |
+                orig.ident == '33-1' |
+                orig.ident == '33-6')
+
+dim_33 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 33') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#35
+lib <- subset(integrated_labeled, orig.ident == '35-0' |
+                orig.ident == '35-1' |
+                orig.ident == '35-6')
+
+dim_35 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 35') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#36
+lib <- subset(integrated_labeled, orig.ident == '36-0' |
+                orig.ident == '36-1' |
+                orig.ident == '36-6')
+
+dim_36 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 36') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+#39
+lib <- subset(integrated_labeled, orig.ident == '39-0' |
+                orig.ident == '39-1' |
+                orig.ident == '39-6')
+
+dim_39 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 39') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#40201
+lib <- subset(integrated_labeled, orig.ident == '40201-0' |
+                orig.ident == '40201-1' |
+                orig.ident == '40201-6')
+
+dim_40201 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 40201') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#44
+lib <- subset(integrated_labeled, orig.ident == '44-0' |
+                orig.ident == '44-1' |
+                orig.ident == '44-6')
+
+dim_44 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 44') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#46
+lib <- subset(integrated_labeled, orig.ident == '46-0' |
+                orig.ident == '46-1' |
+                orig.ident == '46-6')
+
+dim_46 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 46') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#49
+lib <- subset(integrated_labeled, orig.ident == '49-0' |
+                orig.ident == '49-1' |
+                orig.ident == '49-6')
+
+dim_49 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 49') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#5
+lib <- subset(integrated_labeled, orig.ident == '5-0' |
+                orig.ident == '5-1' |
+                orig.ident == '5-6')
+
+dim_5 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 5') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#50040
+lib <- subset(integrated_labeled, orig.ident == '50040-0' |
+                orig.ident == '50040-1' |
+                orig.ident == '50040-6')
+
+dim_50040 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 50040') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#51
+lib <- subset(integrated_labeled, orig.ident == '51-0' |
+                orig.ident == '51-1' |
+                orig.ident == '51-6')
+
+dim_51 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 51') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#53
+lib <- subset(integrated_labeled, orig.ident == '53-0' |
+                orig.ident == '53-1' |
+                orig.ident == '53-6')
+
+dim_53 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 53') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#60060
+lib <- subset(integrated_labeled, orig.ident == '60060-0' |
+                orig.ident == '60060-1' |
+                orig.ident == '60060-6')
+
+dim_60060 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 60060') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+#63
+lib <- subset(integrated_labeled, orig.ident == '63-0' |
+                orig.ident == '63-1' |
+                orig.ident == '63-6')
+
+dim_63 <- DimPlot(lib,
+                     label = FALSE,
+                     group.by = 'orig.ident',
+                     raster = F) +
+  ggtitle('Library 63') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#70179
+lib <- subset(integrated_labeled, orig.ident == '70179-0' |
+                orig.ident == '70179-1' |
+                orig.ident == '70179-6')
+
+dim_70179 <- DimPlot(lib,
+                  label = FALSE,
+                  group.by = 'orig.ident',
+                  raster = F) +
+  ggtitle('Library 70179') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+#70305
+lib <- subset(integrated_labeled, orig.ident == '70305-0' |
+                orig.ident == '70305-1' |
+                orig.ident == '70305-6')
+
+dim_70305 <- DimPlot(lib,
+                     label = FALSE,
+                     group.by = 'orig.ident',
+                     raster = F) +
+  ggtitle('Library 70305') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+#8
+lib <- subset(integrated_labeled, orig.ident == '8-0' |
+                orig.ident == '8-1' |
+                orig.ident == '8-6')
+
+dim_8 <- DimPlot(lib,
+                     label = FALSE,
+                     group.by = 'orig.ident',
+                     raster = F) +
+  ggtitle('Library 8') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+print(dim_09 + dim_13 + dim_17 + dim_2 + dim_20063 + dim_20087 + dim_20088 + 
+        dim_20111 + dim_21 + dim_23 + dim_33 + dim_35 + dim_36 + dim_39 + 
+        dim_40201 + dim_44 + dim_46 + dim_49 + dim_5 + dim_50040 + dim_50049 +
+        dim_51 + dim_53 + dim_60060 + dim_63 + dim_70179 + dim_70305 + dim_8)
+
+
+
+
+
+
+DimPlot(integrated_labeled,
+        label = FALSE,
+        group.by = 'time.ident',
+        raster = F) +
+  ggtitle('By Time Point') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+lib.nine <- subset(integrated_labeled, orig.ident == '09-0' |
+                     orig.ident == '09-1' |
+                     orig.ident == '09-6')
+
+DimPlot(lib.nine,
+        label = FALSE,
+        cols = library.colors,
+        group.by = 'orig.ident') +
+  ggtitle('Library 09') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+no.lib.nine <- subset(integrated_labeled, orig.ident != '09-0' &
+                        orig.ident != '09-1' &
+                        orig.ident != '09-6')
+
+DimPlot(no.lib.nine,
+        label = FALSE,
+        cols = library.colors,
+        group.by = 'orig.ident',
+        raster = F) +
+  ggtitle('Without Library 09') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+
+
+
+# for (i in 1:length(name.id) - 3) {
+#
+#
+#
+#   lib <- subset(integrated_labeled, orig.ident == (name.id[i]) |
+#                        orig.ident == (name.id[i + 1]) |
+#                        orig.ident == (name.id[i + 2]))
+#
+#   DimPlot(lib,
+#           label = FALSE,
+#           cols = library.colors,
+#           group.by = 'orig.ident') +
+#     ggtitle('Library ', paste0(group.id[i])) +
+#     theme(text = element_text(size = 12),
+#           axis.text = element_text(size = 12))
+#
+#   no.lib <- subset(integrated_labeled, orig.ident != (name.id[i]) &
+#                           orig.ident != (name.id[i + 1]) &
+#                           orig.ident != (name.id[i + 2]))
+#
+#   DimPlot(no.lib,
+#           label = FALSE,
+#           cols = library.colors,
+#           group.by = 'orig.ident',
+#           raster = F) +
+#     ggtitle('Without Library ', paste0(group.id[i])) +
+#     theme(text = element_text(size = 12),
+#           axis.text = element_text(size = 12))
+#
+#
+# }
+
+
+
+# Cell type identification ----
+
+# Set the default assay to SCT for cell type identification
+DefaultAssay(integrated_labeled) <- 'SCT'
+
+# Feature plot for specific marker genes
+FeaturePlot(integrated_labeled,
+            features = c('SOX2',
+                         "VIM"),
+            raster = F)
+FeaturePlot(integrated_labeled,
+            features = c('GAD1',
+                         'GAD2',
+                         "SLCC17A6"),
+            ncol = 2,
+            raster = F)
+FeaturePlot(integrated_labeled,
+            features = c('POU5F1',
+                         'NANOG'),
+            raster = F)
+FeaturePlot(integrated_labeled,
+            features = c('NEFM',
+                         'MAP2'),
+            raster = F)
+
+# Define new cluster itentifiers
+# List of gene markers
+trimmed_markers <- c(
+  "GAD1", "GAD2", "SLC17A6", "SLC17A7", "EBF1", # Striatal and various
+  "SEMA3E", # Subcerebral marker
+  "BCL11B",  # Cortical marker
+  "SST", # Inhibitory marker
+  "SATB2",  "NEFM", # Excitatory markers
+  "VIM", "SOX2",  # NPC (Neural Progenitor Cell) markers
+  "SERTAD4", "rna_FOXG1",  # Forebrain markers
+  "POU3F2", "LHX2", # General cortex markers
+  "ADCYAP1", "CUX1", "CUX2", "MAP2", "DCX" # Various neuronal markers
+)
+
+# Convert the gene markers vector to a factor with specified levels
+#trimmed_markers <- factor(trimmed_markers, levels = trimmed_markers)
+
+
+# Create a stacked violin plot using trimmed maker genes
+VlnPlot(integrated_labeled,
+        features = trimmed_markers,
+        stack = TRUE,
+        sort = F,
+        flip = TRUE) +
+  theme(legend.position = 'none') +
+  ggtitle('Expression by Gene Identity')
+
+
+# save(integrated_labeled, file = '08_25_2023_work.RData')
+# save(anchors, file = '08_25_2023_anchors.RData')
+#
+# load('08_25_2023_work.RData')
+# load('08_25_2023_anchors.RData')
+
+
+
+# Set identities of the integrated data to 'seurat_clusters'
+Idents(integrated_labeled) <- 'seurat_clusters'
+
+# Define new cluster identifiers
+# new.cluster.ids
+#     NEFM+ glut
+#     GABA
+#     SST+ GABA
+#     NEFM- glut
+#     SEMA3E+ GABA
+#     NEFM- glut
+#     immature
+#     unknown
+
+
+new.cluster.ids <-
+  c("NEFM+ glut", #1
+    "NEFM- glut", #2
+    "GABA", #3
+    "NEFM- glut", #4
+    "SEMA3E+ GABA", #5
+    "GABA", #6
+    "NEFM+ glut", #7
+    "NEFM+ glut", #8
+    "GABA",#9
+    "GABA",#10
+    "SST+ GABA", #11
+    "immature", #12
+    "NEFM- glut", #13
+    "unknown", #14
+    "NEFM- glut", #15
+    "NEFM- glut", #16
+    "GABA", #17
+    "NEFM- glut", #18
+    'GABA',#19
+    'immature') #20
+
+
+# length(new.cluster.ids)
+#length(unique(integrated_labeled$seurat_clusters))
+
+# Rename cluster levels with new cluster identifiers
+names(new.cluster.ids) <- levels(integrated_labeled)
+integrated.labeled <- RenameIdents(integrated_labeled,
+                                   new.cluster.ids)
+
+# Create DimPlot to visualize labeled clusters using UMAP
+DimPlot(integrated.labeled,
+        reduction = 'umap',
+        label = TRUE,
+        repel = FALSE,
+        pt.size = 0.3,
+        raster = F,
+        cols = c("#E6D2B8", #nmglut
+                 "#CCAA7A", #npglut
+                 "#B33E52", #GABA
+                 "#E6B8BF", #SST GABA
+                 "#CC7A88", #SEMA3E GABA
+                 "#0075DC", #immature neuron
+                 "#4C005C",
+                 "#993F00")) + #unknown
+  ggtitle('Labeled by Cell Type') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+cell.ctn <- table(integrated_labeled@meta.data$seurat_clusters)
+
+DimPlot(integrated.labeled,
+        reduction = 'umap',
+        label = TRUE,
+        repel = FALSE,
+        pt.size = 0.3,
+        raster = F,
+        cols = c("#E6D2B8", #nmglut
+                 "#CCAA7A", #npglut
+                 "#B33E52", #GABA
+                 "#E6B8BF", #SST GABA
+                 "#CC7A88", #SEMA3E GABA
+                 "#0075DC", #immature neuron
+                 "#4C005C",
+                 "#993F00")) + #unknown
+  ggtitle('Labeled by Cell Type') +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+# ### Siwei test code ######
+# DimPlot(integrated.labeled,
+#         reduction = 'umap',
+#         label = TRUE,
+#         repel = FALSE,
+#         pt.size = 0.3,
+#         cols = c("#E6D2B8", #nmglut
+#                  "#CCAA7A", #npglut
+#                  "#B33E52", #GABA
+#                  "#E6B8BF", #SST GABA
+#                  "#CC7A88", #SEMA3E GABA
+#                  "#0075DC", #immature neuron
+#                  "#4C005C", #unknown neuron
+#                  "#993F00", #unknown
+#                  "#996F00")) + #unknown
+#   ggtitle('labeled by cell type') +
+#   theme(text = element_text(size = 10),
+#         axis.text = element_text(size = 10))
+
+###
+
+# Cell type labeling and visualization ----
+
+# Set 'fine.cell.type' to the active identifier in 'integrated.labeled'
+integrated.labeled$fine.cells.type <- integrated.labeled@active.ident
+
+# Convert 'fine.cell.type' to character and assign to 'cell.type'
+integrated.labeled$cell.type <- as.character(integrated.labeled$fine.cells.type)
+
+# Assign specific cell types to the 'cell.type' column
+integrated.labeled$cell.type[integrated.labeled$fine.cells.type %in%
+                               c("SEMA3E+ GABA",
+                                 "SST+ GABA",
+                                 "GABA")] <- "GABA"
+
+# Assign 'unidentified' to 'cell.type' for certain categories
+integrated.labeled$cell.type[integrated.labeled$cell.type %in%
+                               c("unknown neuron",
+                                 "immature neuron",
+                                 "unknown")] <- "unidentified"
+
+# Copy 'cell.type' to 'cell.type.forplot'
+integrated.labeled$cell.type.forplot <- integrated.labeled$cell.type
+
+# Assign specific cell types to 'cell.type' based on 'fine.cell.type'
+integrated.labeled$cell.type[integrated.labeled$fine.cells.type == "NEFM- glut"] <- "nmglut"
+integrated.labeled$cell.type[integrated.labeled$fine.cells.type == "NEFM+ glut"] <- "npglut"
+
+# unique(integrated.labeled$cell.type)
+# unique(integrated.labeled$cell.type.forplot)
+
+# Create new column 'cell.type.counts' and populate with 'cell.type.forplot'
+integrated.labeled$cell.type.counts <- integrated.labeled$cell.type.forplot
+
+# Get unique cells types
+types <- unique(integrated.labeled$cell.type.forplot)
+
+# Loop through each cell type to count occurrences and update 'cell.type.counts'
+for (i in 1:length(types)) {
+  count <- sum(integrated.labeled$cell.type.forplot == types[i])
+  print(count)
+  integrated.labeled$cell.type.counts[integrated.labeled$cell.type.counts == types[i]] <-
+    paste0(types[i], "\n", count)
+}
+
+# unique(integrated.labeled$cell.type.counts)
+
+# Create a DimPlot to visualize clusters labeled by cell type counts
+DimPlot(integrated.labeled, reduction = "umap", group.by = "cell.type.counts",
+        raster = F,
+        label = TRUE, repel = F, pt.size = 0.3,
+        cols = c("#B33E52",
+                 "#0075DC",
+                 "#CCAA7A",
+                 "#E6D2B8",
+                 "#54990F")) +
+  ggtitle("Labeled by Cell Type") +
+  theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12))
+
+
+
+
+
+
+
+
